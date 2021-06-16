@@ -112,3 +112,6 @@ Route::resource('/groups', GroupController::class);
 Route::resource('/projects', ProjectController::class);
 Route::get('/groups/{group}','GroupController@destroy')->name('groups.destroy');
 Route::get('/projects/{project}','ProjectController@destroy')->name('projects.destroy');
+Route::resource('/announcements', AnnouncementController::class);
+Route::post('/announcements/{announcement}','AnnouncementController@update')->name('announcements.update');
+Route::get('/announcements/{announcement}','AnnouncementController@destroy')->name('announcements.destroy');

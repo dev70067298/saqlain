@@ -42,6 +42,11 @@
           <td class="text-center" scope="row">Groups</td>
           <td class="text-center" scope="row">  <a href="{{url('groups')}}" class="btn-theme"> Groups </a></td>
         </tr>
+        <tr>
+            <td class="text-center">5</td>
+          <td class="text-center" scope="row">Announcements</td>
+          <td class="text-center" scope="row">  <a href="{{url('announcements')}}" class="btn-theme"> Announcements </a></td>
+        </tr>
         </tbody>
       </table>
 </div>
