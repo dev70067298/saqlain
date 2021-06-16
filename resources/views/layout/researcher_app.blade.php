@@ -106,7 +106,7 @@ input:checked + .slider:before {
             </a>
             <br clear="all">
         <a href="{{route('research_service')}}" class="side-link">  <h5 style="font-weight: normal" class="text-white text-center nav-side"> 
-                <img src="{{asset('img/icon/jobs.PNG')}}" width="30" height="30"> Products </h5>
+                <img src="{{asset('img/icon/jobs.PNG')}}" width="30" height="30"> Group Details </h5>
             </a>
             <br clear="all">
 

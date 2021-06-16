@@ -47,18 +47,31 @@
                 </div>
                   
                   <div class="form-check form-check-inline mt-2">
-                    <input class="form-check-input" type="hidden" onclick="javascript:yesnoCheck();"  value="2" name="type" id="noCheck">
-                  
+                    <input class="form-check-input" type="radio" onclick="javascript:yesnoCheck();"  value="2" name="type" id="yesCheck">
+                    <label class="form-check-label">Student</label>
 
                 </div>
-                  <!-- <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" onclick="javascript:yesnoCheck();"  value="3"  name="type" id="yesCheck">
-                    <label class="form-check-label">Seller</label>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" onclick="javascript:yesnoCheck();"  value="3"  name="type" id="noCheck">
+                    <label class="form-check-label">Teacher</label>
                 </div>
                 <div id="ifYes" style="visibility:hidden" class="form-group">
-                  <input style="margin-top: 5px" type="file" class="form-control border-top-0 border-right-0 border-left-0" placeholder="Chose Certificate" id="file" name="file">
+                <div class="form-group">
+                <br>
+                <select class="form-control" name="group">
 
-                </div> -->
+  <option>Select Group</option>
+    @php
+    $products = \App\Group::orderBy('created_at', 'desc')->get();
+    @endphp
+  @foreach ($products as $key)
+    <option value="{{ $key->id }}">
+        {{ $key->group_name }}
+    </option>
+  @endforeach
+</select>
+                    </div>
+                </div>
 
                 @if ($errors->has('type')) <p style="color:red;">{{ $errors->first('type') }}</p> @endif
 

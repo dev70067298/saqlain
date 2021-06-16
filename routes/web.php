@@ -110,5 +110,12 @@ Route::post('/articals/{artical}','ArticalController@update')->name('articals.up
 Route::get('/articals/{artical}','ArticalController@destroy')->name('articals.destroy');
 Route::resource('/groups', GroupController::class);
 Route::resource('/projects', ProjectController::class);
+Route::resource('/assign', AssignController::class);
+
+Route::get('/indexteacher','AssignController@indexteacher')->name('indexteacher');
+Route::post('/assignteacher','AssignController@assignteacher')->name('assignteacher');
+
+Route::get('/assigns/{id}','AssignController@destroy')->name('assigns.destroy');
+Route::get('/assigns1/{id}','AssignController@destroy1')->name('assigns.destroy1');
 Route::get('/groups/{group}','GroupController@destroy')->name('groups.destroy');
 Route::get('/projects/{project}','ProjectController@destroy')->name('projects.destroy');
