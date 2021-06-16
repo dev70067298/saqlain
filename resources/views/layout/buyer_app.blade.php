@@ -61,7 +61,7 @@ $value=\App\cart::where('userid',$buyer)->orderBy('id','desc')->count();
             </a>
             <br clear="all">
             <a href="{{route('buyer_bid')}}" class="side-link">  <h5 style="font-weight: normal" class="text-white text-center nav-side">
-                <img src="{{asset('img/icon/dashboard.PNG')}}" width="30" height="30" > Bidding </h5>
+                <img src="{{asset('img/icon/dashboard.PNG')}}" width="30" height="30" > Group Detail </h5>
             </a>
             <br clear="all">
         <a href="{{route('buyer_researcher')}}" class="side-link">  <h5 style="font-weight: normal" class="text-white text-center nav-side">

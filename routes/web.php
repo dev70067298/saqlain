@@ -61,6 +61,11 @@ Route::post('/send_message_researcher','ChatController@send_message_researcher')
 Route::get('/research_service','ResearcherController@research_service')->name('research_service');
 Route::post('/researcher_service','ResearcherController@researcher_service')->name('researcher_service');
 Route::get('/delete_service/{id}','ResearcherController@delete_service')->name('delete_service');
+Route::get('/group_teacher_data/{id}','ResearcherController@group_teacher_data')->name('group_teacher_data');
+Route::get('/group_student_data/{id}','bidController@group_student_data')->name('group_student_data');
+
+
+
 Route::get('/researches','ResearchController@researches')->name('researches');
 Route::post('/add_research','ResearchController@add_research')->name('add_research');
 Route::get('/edit_research/{id}','ResearchController@edit_research')->name('edit_research');

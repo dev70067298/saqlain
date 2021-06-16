@@ -12,6 +12,9 @@ use App\service;
 use App\asset;
 use App\adminService;
 use App\market;
+use App\gt;
+use App\gp;
+
 class ResearcherController extends Controller
 {
     protected $user;
@@ -139,14 +142,13 @@ class ResearcherController extends Controller
            {
                return redirect('/login');
            }
-           $user=Auth::user();
+           $user = Auth::user();
            $chat_users=User::where('userRole',2)->orderBy('id','desc')->get();
            $admin=User::where('userRole',1)->first();
-           $services=service::where('provider',$user->id)->get();
-           $admin_service=adminService::get();
-           $asset=asset::get();
-           $market=market::get();
-          return view('researcher.service')->with(array('admin_service'=>$admin_service,'asset'=>$asset,'market'=>$market,'services'=>$services,'admin'=>$admin,'chat_users'=>$chat_users,'user'=>$user));
+           $data=gt::join('group','gt.g_id','=','group.id')
+           ->select('group.group_name','group.id')->where('gt.t_id',$user->id)
+           ->get();
+          return view('researcher.service')->with(array('data'=>$data,'admin'=>$admin,'chat_users'=>$chat_users,'user'=>$user));
       }
 
 
@@ -212,6 +214,27 @@ class ResearcherController extends Controller
            Storage::delete($path1);
            $service->delete();
            return redirect()->back()->with('success','Product Deleted');
+      }
+
+      public function group_teacher_data($id)
+      {
+          if (Auth::check()) {
+              if($this->user->userRole != 3)
+              {
+               return redirect('/login');
+              }
+           }
+           else
+           {
+               return redirect('/login');
+           }
+           $gp=gp::join('projects','gp.p_id','=','projects.id')->select('projects.title','projects.description')->where('gp.g_id',$id)->get();
+           $users=User::where('group_id',$id)->get();
+           $chat_users=User::where('userRole',2)->orderBy('id','desc')->get();
+           $admin=User::where('userRole',1)->first();
+
+           return view('researcher.groupdata')->with(array('gp'=>$gp,'admin'=>$admin,'chat_users'=>$chat_users,'student'=>$users));
+
       }
 
 }

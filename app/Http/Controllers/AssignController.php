@@ -104,15 +104,15 @@ if(empty($data_exist))
         $gt->g_id = $request->group;
         $gt->t_id = $request->teacher;
         if($gt->save()){
-            return redirect()->back()->with('success','Project and Teacher are assigned');
+            return redirect()->back()->with('success','Group and Teacher are assigned');
         }
         else{
-            return redirect()->back()->with('error','Project and Teacher not assigned');
+            return redirect()->back()->with('error','Group and Teacher not assigned');
   
         }
     }
     else{
-        return redirect()->back()->with('error','Project and Teacher already assigned');
+        return redirect()->back()->with('error','Group and Teacher already assigned');
   
     }
     }

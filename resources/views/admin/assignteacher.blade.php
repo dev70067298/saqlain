@@ -74,10 +74,10 @@
         <form method="post" action="{{route('assignteacher')}}">
         @csrf
         <div class="form-group">
-            <label><b>Select Project:</b></label>
+            <label><b>Select Group:</b></label>
             <select class="form-control" name="group">
 
-<option>Select Project</option>
+<option>Select Group</option>
 @php
 
 $projects = \App\Group::all();

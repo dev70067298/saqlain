@@ -13,6 +13,8 @@ use App\market;
 use App\package;
 use App\bidding;
 use Carbon\Carbon;
+use App\gt;
+use App\gp;
 
 class bidController extends Controller
 {
@@ -40,12 +42,11 @@ class bidController extends Controller
               return redirect('/login');
           }
 
-          $bids=bidding::where('winner',null)->get();
-          date_default_timezone_set("Asia/Karachi");
-          $now   = Carbon::now();
-          $time  = $now->format('H:i:s');
-          $dater= $now->format('Y-m-d');
-          return view('buyer.bids')->with(array('bids'=>$bids,'time'=>$time,'dater'=>$dater));
+          $user = Auth::user();
+          $data=User::join('group','users.group_id','=','group.id')
+          ->select('group.group_name','group.id')->where('users.id',$user->id)
+          ->get();
+          return view('buyer.bids')->with(array('data'=>$data));
          }
 
          public function your_bid($id)
@@ -170,6 +171,25 @@ class bidController extends Controller
 
               return view('pages.about');
              }
+
+             public function group_student_data($id)
+      {
+          if (Auth::check()) {
+              if($this->user->userRole != 2)
+              {
+               return redirect('/login');
+              }
+           }
+           else
+           {
+               return redirect('/login');
+           }
+           $gp=gp::join('projects','gp.p_id','=','projects.id')->select('projects.title','projects.description')->where('gp.g_id',$id)->get();
+           $user=gt::join('users','gt.t_id','=','users.id')->select('users.name','users.email')->where('gt.g_id',$id)->get();
+           
+           return view('buyer.groupdata')->with(array('gp'=>$gp,'teacher'=>$user));
+
+      }
 
 
 }
