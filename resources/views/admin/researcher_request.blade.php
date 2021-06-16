@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="bg-white boxer container mt-3">
-    <h3 class="h3">Seller Requests</h3>
+    <h3 class="h3">Student Requests</h3>
     <center><div>
     @if(Session::has('success'))
     <p class="col-lg-4 col-md-4 col-sm-4 col-xs-4 alert {{ Session::get('alert-class', 'alert-success') }}">
@@ -23,7 +23,6 @@
                 <th class="text-center">UserName</th>
                 <th class="text-center">Email</th>
                 <th class="text-center">Added</th>
-                <th class="text-center">Certificates</th>
                 <th class="text-center">Action</th>
             </tr>
        </thead>
@@ -39,11 +38,8 @@
             <td class="text-center" scope="row">{{$row->user}}</td>
              <td class="text-center" scope="row">{{$row->email}}</td>
              <td class="text-center" scope="row">{{$row->created_at}}</td>
-          <td class="text-center" scope="row"><a href="{{asset($row->file)}}" download>
-            <i class="fa fa-download" style="font-size:48px;color:red"></i>
-              </a>
-              </td>
-             <td class="text-center" scope="row">
+
+            <td class="text-center" scope="row">
              <a href="{{route('reject_researcher',array('id'=>$row->id))}}" class="btn-theme-border"> Reject </a>
                  <a href="{{route('accept_researcher',array('id'=>$row->id))}}" class="btn-theme"> Accept </a>
                 </td>

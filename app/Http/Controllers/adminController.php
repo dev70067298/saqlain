@@ -86,9 +86,11 @@ class adminController extends Controller
               return redirect('/admin');
           }
           $buyer=User::where('userRole',2)->orderBy('id', 'desc')->get();
+          $request=User::where('userRole',2)->where('status',0)->count();
+
           $chat_users=User::whereIn('userRole',[2,3])->orderBy('id','desc')->get();
 
-         return view('admin.buyer')->with(array('chat_users'=>$chat_users,'buyer'=>$buyer));
+         return view('admin.buyer')->with(array('chat_users'=>$chat_users,'buyer'=>$buyer,'request'=>$request));
      }
 
       //Researcher Request
@@ -104,7 +106,7 @@ class adminController extends Controller
            {
                return redirect('/admin');
            }
-           $request=User::where('userRole',3)->where('status',0)->orderBy('id','desc')->get();
+           $request=User::where('userRole',2)->where('status',0)->orderBy('id','desc')->get();
            $chat_users=User::whereIn('userRole',[2,3])->orderBy('id','desc')->get();
 
           return view('admin.researcher_request')->with(array('chat_users'=>$chat_users,'request'=>$request));

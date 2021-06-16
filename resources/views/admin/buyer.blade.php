@@ -2,6 +2,17 @@
 
 @section('content')
 <div class="bg-white boxer container mt-3">
+<div class="bg-white boxer container mt-3">
+    <div class="row">
+        <div class="col-8">
+    <h3 class="h3">New Student Request</h3>
+    <h5 class="h5">Total Requests: {{$request}}</h5>
+        </div>
+        <div class="col-4">
+        <a href="{{route('researcher_request')}}" class="btn-theme mt-4">New Student</a>
+        </div>
+    </div>
+</div>
     <h3 class="h3">Buyers List</h3>
     <center><div>
     @if(Session::has('success'))

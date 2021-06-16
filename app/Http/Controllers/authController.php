@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use App\User;
+use App\gs;
+
 class authController extends Controller
 {
   //Register Account
@@ -33,15 +35,19 @@ class authController extends Controller
           $user->address=$request->address;
           $user->password=bcrypt($request->password);
           $user->userRole=$request->type;
+          if($request->group !=="Select Group"){          
+              $user->group_id=$request->group;
+          }
+
           if($request->type == 2)
           {
               $status='Buyer';
-              $user->status=1;
+              $user->status=0;
           }
           if($request->type == 3)
           {
               $status='Researcher';
-              $user->status=0;
+              $user->status=1;
               $user->credit=0;
           }
           if(isset($request->file))
@@ -58,7 +64,15 @@ class authController extends Controller
         }
           }
           //$user->file=$path;
-          $user->save();
+          $data1 = $user->save();
+          if($request->type == 2)
+          {
+            $student=User::where('email',$request->email)->get();
+$group_student = new gs();
+$group_student->g_id = $request->group;
+$group_student->s_id = $student[0]->id;
+$group_student->save();
+          }
           if($user->save())
           {
             return redirect()->back()->with('success','Your Are Registered Successfully as '.$status);

@@ -34,20 +34,39 @@
         </tr>
         <tr>
             <td class="text-center">3</td>
-          <td class="text-center" scope="row">Anounncements</td>
-          <td class="text-center" scope="row">  <a href="{{url('projects')}}" class="btn-theme"> Delete </a></td>
+          <td class="text-center" scope="row">Project</td>
+          <td class="text-center" scope="row">  <a href="{{url('projects')}}" class="btn-theme"> Project </a></td>
         </tr>
         <tr>
             <td class="text-center">4</td>
           <td class="text-center" scope="row">Groups</td>
           <td class="text-center" scope="row">  <a href="{{url('groups')}}" class="btn-theme"> Groups </a></td>
         </tr>
+
         <tr>
             <td class="text-center">5</td>
           <td class="text-center" scope="row">Announcements</td>
           <td class="text-center" scope="row">  <a href="{{url('announcements')}}" class="btn-theme"> Announcements </a></td>
+
+
+        <tr>
+            <td class="text-center">6</td>
+          <td class="text-center" scope="row">Assign Project to Groups</td>
+          <td class="text-center" scope="row">  <a href="{{url('assign')}}" class="btn-theme"> Assign Projects </a></td>
+        </tr>
+        <tr>
+            <td class="text-center">7</td>
+          <td class="text-center" scope="row">Assign Teachers to Groups</td>
+          <td class="text-center" scope="row">  <a href="{{url('indexteacher')}}" class="btn-theme"> Assign Teachers  </a></td>
+
         </tr>
         </tbody>
       </table>
 </div>
+
+
+
+
+
+
 @endsection
