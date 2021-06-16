@@ -91,7 +91,7 @@ class Source extends ApiResource
 
         $id = $this['id'];
         if (!$id) {
-            $class = static::class;
+            $class = \get_class($this);
             $msg = "Could not determine which URL to request: {$class} instance "
              . "has invalid ID: {$id}";
 
@@ -155,7 +155,7 @@ class Source extends ApiResource
      *
      * @throws \Stripe\Exception\ApiErrorException if the request fails
      *
-     * @return \Stripe\Source the verified source
+     * @return Source the verified source
      */
     public function verify($params = null, $opts = null)
     {

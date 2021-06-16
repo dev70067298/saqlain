@@ -11,7 +11,6 @@
 namespace Carbon\Traits;
 
 use Carbon\CarbonInterface;
-use ReturnTypeWillChange;
 
 /**
  * Trait Modifiers.
@@ -83,7 +82,7 @@ trait Modifiers
         }
 
         return $this->change(
-            'next '.(\is_string($modifier) ? $modifier : static::$days[$modifier])
+            'next '.(is_string($modifier) ? $modifier : static::$days[$modifier])
         );
     }
 
@@ -165,7 +164,7 @@ trait Modifiers
         }
 
         return $this->change(
-            'last '.(\is_string($modifier) ? $modifier : static::$days[$modifier])
+            'last '.(is_string($modifier) ? $modifier : static::$days[$modifier])
         );
     }
 
@@ -430,7 +429,6 @@ trait Modifiers
      *
      * @see https://php.net/manual/en/datetime.modify.php
      */
-    #[ReturnTypeWillChange]
     public function modify($modify)
     {
         return parent::modify((string) $modify);

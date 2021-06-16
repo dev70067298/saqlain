@@ -83,7 +83,6 @@
 %token T_CLASS
 %token T_TRAIT
 %token T_INTERFACE
-%token T_ENUM
 %token T_EXTENDS
 %token T_IMPLEMENTS
 %token T_OBJECT_OPERATOR
@@ -111,5 +110,3 @@
 %token T_NAME_FULLY_QUALIFIED
 %token T_NAME_QUALIFIED
 %token T_NAME_RELATIVE
-%token T_ATTRIBUTE
-%token T_ENUM
