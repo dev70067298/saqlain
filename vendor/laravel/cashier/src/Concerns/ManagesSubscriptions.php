@@ -2,6 +2,7 @@
 
 namespace Laravel\Cashier\Concerns;
 
+use Laravel\Cashier\Cashier;
 use Laravel\Cashier\Subscription;
 use Laravel\Cashier\SubscriptionBuilder;
 
@@ -59,11 +60,11 @@ trait ManagesSubscriptions
      */
     public function trialEndsAt($name = 'default')
     {
-        if ($this->onGenericTrial()) {
-            return $this->trial_ends_at;
+        if ($subscription = $this->subscription($name)) {
+            return $subscription->trial_ends_at;
         }
 
-        return $this->subscription($name)->trial_ends_at;
+        return $this->trial_ends_at;
     }
 
     /**
@@ -92,7 +93,7 @@ trait ManagesSubscriptions
      */
     public function subscription($name = 'default')
     {
-        return $this->subscriptions()->where('name', $name)->first();
+        return $this->subscriptions->where('name', $name)->first();
     }
 
     /**
@@ -102,7 +103,7 @@ trait ManagesSubscriptions
      */
     public function subscriptions()
     {
-        return $this->hasMany(Subscription::class, $this->getForeignKey())->orderBy('created_at', 'desc');
+        return $this->hasMany(Cashier::$subscriptionModel, $this->getForeignKey())->orderBy('created_at', 'desc');
     }
 
     /**
@@ -145,7 +146,7 @@ trait ManagesSubscriptions
     }
 
     /**
-     * Determine if the entity has a valid subscription on the given plan.
+     * Determine if the customer has a valid subscription on the given plan.
      *
      * @param  string  $plan
      * @return bool

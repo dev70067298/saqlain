@@ -70,6 +70,8 @@ You can continue to use the legacy integration patterns used prior to version [7
 
 See the [PHP API docs](https://stripe.com/docs/api/php#intro).
 
+See [video demonstrations][youtube-playlist] covering how to use the library.
+
 ## Legacy Version Support
 
 ### PHP 5.4 & 5.5
@@ -228,7 +230,7 @@ Install dependencies as mentioned above (which will resolve [PHPUnit](http://pac
 Or to run an individual test file:
 
 ```bash
-./vendor/bin/phpunit tests/UtilTest.php
+./vendor/bin/phpunit tests/Stripe/UtilTest.php
 ```
 
 Update bundled CA certificates from the [Mozilla cURL release][curl]:
@@ -264,3 +266,4 @@ See the "SSL / TLS compatibility issues" paragraph above for full context. If yo
 [php-cs-fixer]: https://github.com/FriendsOfPHP/PHP-CS-Fixer
 [psr3]: http://www.php-fig.org/psr/psr-3/
 [stripe-mock]: https://github.com/stripe/stripe-mock
+[youtube-playlist]: https://www.youtube.com/playlist?list=PLy1nL-pvL2M6cUbiHrfMkXxZ9j9SGBxFE

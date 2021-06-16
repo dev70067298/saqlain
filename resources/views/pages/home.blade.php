@@ -274,16 +274,23 @@
 							<!-- <i class="fa fa-book rs-animation-scale-up"></i> -->
 							<img src="image/Asset 74.png" style="height: 34px; width: AUTO;">
 						</div>
-						<div class="services-desc" style="margin-bottom: 48px;">
-							<h4 class="services-title">WHERE DO DONATIONS GO?</h4>
-							<p>App/Systems Development
-								<br>
-								Marketing
-								<br>
-								Travel to School Districts
-								<br>
+						<div class="services-desc" style="margin-bottom: 0px;">
+							<h4 class="services-title">Annoucments</h4>
+							<p>
+                                @php
+                                $ann = \App\Announcement::all();
 
-							</p>
+                                @endphp
+
+                                <ul>
+                                <marquee  direction="up" >
+                                    @foreach ($ann as $key)
+                                               <li style="color: white">{{$key->title}}</li>
+                                               @endforeach
+                                    </marquee>
+                                </ul>
+                                </p>
+
 						</div>
 					</div>
 				</div>
@@ -322,7 +329,7 @@
 					<div class="about-img rs-animation-hover">
 						<img src="image/42206772_1579777316432974_r.jpeg" alt="img02" />
 						<a class="popup-youtube rs-animation-fade mfp-iframe"
-							href="https://www.youtube.com/watch?v=AN6EBJg57sE" title="Video Icon">
+							href="" title="Video Icon">
 
 						</a>
 						<!-- <iframe class="popup-youtube rs-animation-fade" width="560" height="315"
@@ -488,7 +495,7 @@
 					<div class="about-img rs-animation-hover">
 						<img src="images/about/about.jpg" alt="img02" />
 						<a class="popup-youtube rs-animation-fade mfp-iframe"
-							href="https://www.youtube.com/watch?v=AN6EBJg57sE" title="Video Icon">
+							href="" title="Video Icon">
 
 						</a>
 						<!-- <iframe class="popup-youtube rs-animation-fade" width="560" height="315"
@@ -561,7 +568,7 @@
 	<div id="rs-events" class="rs-events sec-spacer">
 		<div class="container">
 			<div class="sec-title mb-50 text-center">
-				<h2>Blogs</h2>
+				<h2>Articals</h2>
 
 			</div>
 			<div class="row">
@@ -573,35 +580,32 @@
 						data-mobile-device-dots="true" data-ipad-device="2" data-ipad-device-nav="true"
 						data-ipad-device-dots="true" data-md-device="3" data-md-device-nav="true"
 						data-md-device-dots="true">
-						<?php
-					//$sql = mysqli_query($con, "SELECT * FROM blog ORDER BY id DESC ");
-					?>
-						<?php
-					//while ($row = mysqli_fetch_assoc($sql)) {
-						?>
+                        @php
+                        $articals = \App\Artical::orderBy('created_at', 'desc')->limit(5)->get();
+
+                        @endphp
+@foreach ($articals as $key)
 						<div class="event-item">
 							<div class="event-img">
-								<img class="img-fluid" src="admin/super/web/blogs/<?php //echo $row['image']; ?>" alt=""  style="height:350px"/>
+								<img class="img-fluid" src="{{url('image/'.$key->image)}}" alt=""  style="height:350px"/>
 								<a class="image-link" href="#" title="University Tour 2018">
-									<!-- <i class="fas fa-link"></i> -->
+
 								</a>
 							</div>
 							<div class="events-details sec-color" style="padding-top: 25px;">
 								<div class="event-date">
 									<i class="fa fa-calendar"></i>
-									<span><?php //echo $row['date']; ?></span>
+									<span>	{{date('d-m-Y', strtotime($key->created_at))}}</span>
 								</div>
-								<h4 class="event-title"><a href="#"><?php // echo $row['title']; ?></a></h4>
+								<h4 class="event-title"><a href="#">	{{$key->title}}</a></h4>
 								<div class="event-meta">
 								</div>
 								<div class="event-btn">
-									<a href="blog.php">Read More <i class="fa fa-angle-double-right"></i></a>
+									<a href="">Read More <i class="fa fa-angle-double-right"></i></a>
 								</div>
 							</div>
 						</div>
-						<?php
-				//	}
-					?>
+					@endforeach
 
 					</div>
 
@@ -725,46 +729,41 @@
 	<div id="rs-latest-news" class="rs-latest-news sec-spacer">
 		<div class="container">
 			<div class="sec-title mb-50 text-center">
-				<h2>OUR LATEST NEWS</h2>
+				<h2>OUR LATEST Events</h2>
 				<!-- <p>Fusce sem dolor, interdum in efficitur at, faucibus nec lorem. Sed nec molestie justo.</p> -->
 			</div>
 			<div class="row">
 				<div class="col-md-6">
-					<?php
-                  //  $sql = mysqli_query($con, "SELECT * FROM news ORDER BY id DESC LIMIT 1");
-                    ?>
-					<?php
-                   // while ($row = mysqli_fetch_assoc($sql)) {
-                   //     $orgDate = $row['date'];
-   //$newDate = date("M d,Y", strtotime($orgDate));
+				@php
+                        $events = \App\Events::orderBy('created_at', 'desc')->limit(1)->get();
 
-                        ?>
-
+@endphp
+@foreach ($events as $key)
 					<div class="news-normal-block">
 						<div class="news-img">
 							<a href="news.php">
-								<img  src="admin/super/web/news/<?php // echo $row['image'] ?>" alt="" style="height:197px; width:149px"  />
+								<img  src="{{url('image/'.$key->image)}}" alt="" class="img-fluid" style="height:197px; width:149px"  />
 							</a>
 						</div>
 						<div class="news-date">
-							<i class="fa fa-calendar-check-o"><b> <?php //echo $newDate; ?></b></i>
+							<i class="fa fa-calendar-check-o"><b>	{{date('d-m-Y', strtotime($key->created_at))}}</b></i>
 							<span></span>
 						</div>
-						<h4 class="news-title"><a href="news.php"><?php //echo $row['title']; ?></a></h4>
+						<h4 class="news-title"><a href="news.php">{{$key->title}}</a></h4>
 						<div class="news-desc">
 							<p><?php
-						//	$string=$row['detail'];
-								//	if (strlen($string) > 450) {
+							$string=$key->description;
+									if (strlen($string) > 450) {
 
 										// truncate string
-									//	$stringCut = substr($string, 0, 450);
+										$stringCut = substr($string, 0, 450);
 										//$endPoint = strrpos($stringCut, ' ');
 
 									//	//if the string doesn't contain any space then it will cut without word basis.
-									///	$string = $endPoint? substr($stringCut, 0, $endPoint) : substr($stringCut, 0);
-									//	$string .= '...';
-								//	}
-								//	echo $string;
+										$string = $endPoint? substr($stringCut, 0, $endPoint) : substr($stringCut, 0);
+										$string .= '...';
+									}
+									echo $string;
 
 							 ?></p>
 
@@ -777,58 +776,49 @@
 							<a class="btn btn-info" href="news.php">Read More</a>
 						</div>
 					</div>
-					<?php
-               //     }
-                    ?>
+				@endforeach
 				</div>
 				<div class="col-md-6">
 					<div class="news-list-block">
-						<?php
-                   // $sql = mysqli_query($con, "SELECT * FROM news ORDER BY id DESC LIMIT 3");
-                    ?>
-						<?php
-                //    while ($row = mysqli_fetch_assoc($sql)) {
-                    //                            $orgDate = $row['date'];
-  //  $newDate = date("M d,Y", strtotime($orgDate));
+						@php
+                        $events = \App\Events::orderBy('created_at', 'desc')->limit(3)->get();
 
-                        ?>
+@endphp
+@foreach ($events as $key)
 
 						<div class="news-list-item">
 							<div class="news-img">
 								<a href="news.php">
-								<img class="img-fluid" src="admin/super/web/news/<?php //echo $row['image'] ?>" alt="" style="height:94px;width:124px" />
+								<img class="img-fluid" src="{{url('image/'.$key->image)}}" alt="" style="height:94px;width:124px" />
 								</a>
 								<div class="news-date testi-name" style="margin-top:10px ; margin-bottom:0px;">
-									<span><i class="fa fa-calendar-check-o" ></i><?php //echo $newDate; ?></span>
+									<span><i class="fa fa-calendar-check-o" ></i>{{date('d-m-Y', strtotime($key->created_at))}}</span>
 									<span></span>
 								</div>
 							</div>
 
 							<div class="news-content">
-								<h5 class="news-title"><a href="news.php" blog-details.html><?php //echo $row['title']; ?></a>
+								<h5 class="news-title"><a href="news.php" blog-details.html>{{$key->title}}</a>
 								</h5>
 
 								<div class="news-desc" >
 									<p style="text-align: justify"><?php
-//$string=$row['detail'];
-								///	if (strlen($string) > 100) {
+$string=$key->description;
+									if (strlen($string) > 100) {
 
 										// truncate string
-									//	$stringCut = substr($string, 0, 100);
-									//	$endPoint = strrpos($stringCut, ' ');
+										$stringCut = substr($string, 0, 100);
+										$endPoint = strrpos($stringCut, ' ');
 
 										//if the string doesn't contain any space then it will cut without word basis.
-									//	$string = $endPoint? substr($stringCut, 0, $endPoint) : substr($stringCut, 0);
-									//	$string .= '... <a href="news.php">Read More</a>';
-									//}
-								//	echo $string; ?></p>
+										$string = $endPoint? substr($stringCut, 0, $endPoint) : substr($stringCut, 0);
+										$string .= '... <a href="news.php">Read More</a>';
+									}
+									echo $string; ?></p>
 								</div>
 							</div>
 						</div>
-						<?php
-                 //   }
-                    ?>
-
+					@endforeach
 					</div>
 				</div>
 			</div>
