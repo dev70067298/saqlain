@@ -45,7 +45,7 @@
                     <input type="password" class="form-control border-top-0 border-right-0 border-left-0" placeholder="Repeat-Password" name="Repeat-password" required>
                     @if ($errors->has('Repeat-Password')) <p style="color:red;">{{ $errors->first('Repeat-Password') }}</p> @endif
                 </div>
-                  
+
                   <div class="form-check form-check-inline mt-2">
                     <input class="form-check-input" type="radio" onclick="javascript:yesnoCheck();"  value="2" name="type" id="yesCheck">
                     <label class="form-check-label">Student</label>

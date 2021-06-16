@@ -4,6 +4,7 @@ namespace Laravel\Cashier;
 
 use Carbon\Carbon;
 use DateTimeInterface;
+use Exception;
 use Illuminate\Support\Arr;
 use InvalidArgumentException;
 use Laravel\Cashier\Concerns\InteractsWithPaymentBehavior;
@@ -39,7 +40,7 @@ class SubscriptionBuilder
     /**
      * The date and time the trial will expire.
      *
-     * @var \Carbon\Carbon|\Carbon\CarbonInterface
+     * @var \Carbon\Carbon|\Carbon\CarbonInterface|null
      */
     protected $trialExpires;
 
@@ -58,18 +59,32 @@ class SubscriptionBuilder
     protected $billingCycleAnchor = null;
 
     /**
-     * The coupon code being applied to the customer.
+     * The coupon being applied to the subscription.
      *
      * @var string|null
      */
     protected $coupon;
 
     /**
+     * The promotion code being applied to the subscription.
+     *
+     * @var string|null
+     */
+    protected $promotionCode;
+
+    /**
+     * Determines if user redeemable promotion codes are available in Stripe Checkout.
+     *
+     * @var bool|null
+     */
+    protected $allowPromotionCodes;
+
+    /**
      * The metadata to apply to the subscription.
      *
-     * @var array|null
+     * @var array
      */
-    protected $metadata;
+    protected $metadata = [];
 
     /**
      * Create a new subscription builder instance.
@@ -79,7 +94,7 @@ class SubscriptionBuilder
      * @param  string|string[]  $plans
      * @return void
      */
-    public function __construct($owner, $name, $plans = null)
+    public function __construct($owner, $name, $plans = [])
     {
         $this->name = $name;
         $this->owner = $owner;
@@ -93,13 +108,13 @@ class SubscriptionBuilder
      * Set a plan on the subscription builder.
      *
      * @param  string  $plan
-     * @param  int  $quantity
+     * @param  int|null  $quantity
      * @return $this
      */
     public function plan($plan, $quantity = 1)
     {
         $options = [
-            'plan' => $plan,
+            'price' => $plan,
             'quantity' => $quantity,
         ];
 
@@ -113,9 +128,20 @@ class SubscriptionBuilder
     }
 
     /**
+     * Set a metered plan on the subscription builder.
+     *
+     * @param  string  $plan
+     * @return $this
+     */
+    public function meteredPlan($plan)
+    {
+        return $this->plan($plan, null);
+    }
+
+    /**
      * Specify the quantity of a subscription item.
      *
-     * @param  int  $quantity
+     * @param  int|null  $quantity
      * @param  string|null  $plan
      * @return $this
      */
@@ -126,7 +152,7 @@ class SubscriptionBuilder
                 throw new InvalidArgumentException('Plan is required when creating multi-plan subscriptions.');
             }
 
-            $plan = Arr::first($this->items)['plan'];
+            $plan = Arr::first($this->items)['price'];
         }
 
         return $this->plan($plan, $quantity);
@@ -201,6 +227,31 @@ class SubscriptionBuilder
     }
 
     /**
+     * The promotion code to apply to a new subscription.
+     *
+     * @param  string  $promotionCode
+     * @return $this
+     */
+    public function withPromotionCode($promotionCode)
+    {
+        $this->promotionCode = $promotionCode;
+
+        return $this;
+    }
+
+    /**
+     * Enables user redeemable promotion codes.
+     *
+     * @return $this
+     */
+    public function allowPromotionCodes()
+    {
+        $this->allowPromotionCodes = true;
+
+        return $this;
+    }
+
+    /**
      * The metadata to apply to a new subscription.
      *
      * @param  array  $metadata
@@ -208,7 +259,7 @@ class SubscriptionBuilder
      */
     public function withMetadata($metadata)
     {
-        $this->metadata = $metadata;
+        $this->metadata = (array) $metadata;
 
         return $this;
     }
@@ -236,11 +287,16 @@ class SubscriptionBuilder
      * @param  array  $subscriptionOptions
      * @return \Laravel\Cashier\Subscription
      *
+     * @throws \Exception
      * @throws \Laravel\Cashier\Exceptions\PaymentActionRequired
      * @throws \Laravel\Cashier\Exceptions\PaymentFailure
      */
     public function create($paymentMethod = null, array $customerOptions = [], array $subscriptionOptions = [])
     {
+        if (empty($this->items)) {
+            throw new Exception('At least one plan is required when starting subscriptions.');
+        }
+
         $customer = $this->getStripeCustomer($paymentMethod, $customerOptions);
 
         $payload = array_merge(
@@ -254,20 +310,37 @@ class SubscriptionBuilder
             $this->owner->stripeOptions()
         );
 
-        if ($this->skipTrial) {
-            $trialEndsAt = null;
-        } else {
-            $trialEndsAt = $this->trialExpires;
+        $subscription = $this->createSubscription($stripeSubscription);
+
+        if ($subscription->hasIncompletePayment()) {
+            (new Payment(
+                $stripeSubscription->latest_invoice->payment_intent
+            ))->validate();
         }
+
+        return $subscription;
+    }
+
+    /**
+     * Create the Eloquent Subscription.
+     *
+     * @param  \Stripe\Subscription  $stripeSubscription
+     * @return \Laravel\Cashier\Subscription
+     */
+    protected function createSubscription(StripeSubscription $stripeSubscription)
+    {
+        /** @var \Stripe\SubscriptionItem $firstItem */
+        $firstItem = $stripeSubscription->items->first();
+        $isSinglePlan = $stripeSubscription->items->count() === 1;
 
         /** @var \Laravel\Cashier\Subscription $subscription */
         $subscription = $this->owner->subscriptions()->create([
             'name' => $this->name,
             'stripe_id' => $stripeSubscription->id,
             'stripe_status' => $stripeSubscription->status,
-            'stripe_plan' => $stripeSubscription->plan ? $stripeSubscription->plan->id : null,
-            'quantity' => $stripeSubscription->quantity,
-            'trial_ends_at' => $trialEndsAt,
+            'stripe_plan' => $isSinglePlan ? $firstItem->plan->id : null,
+            'quantity' => $isSinglePlan ? $firstItem->quantity : null,
+            'trial_ends_at' => ! $this->skipTrial ? $this->trialExpires : null,
             'ends_at' => null,
         ]);
 
@@ -280,13 +353,47 @@ class SubscriptionBuilder
             ]);
         }
 
-        if ($subscription->hasIncompletePayment()) {
-            (new Payment(
-                $stripeSubscription->latest_invoice->payment_intent
-            ))->validate();
+        return $subscription;
+    }
+
+    /**
+     * Begin a new Checkout Session.
+     *
+     * @param  array  $sessionOptions
+     * @param  array  $customerOptions
+     * @return \Laravel\Cashier\Checkout
+     */
+    public function checkout(array $sessionOptions = [], array $customerOptions = [])
+    {
+        if (empty($this->items)) {
+            throw new Exception('At least one plan is required when starting subscriptions.');
         }
 
-        return $subscription;
+        if (! $this->skipTrial && $this->trialExpires) {
+            // Checkout Sessions are active for 24 hours after their creation and within that time frame the customer
+            // can complete the payment at any time. Stripe requires the trial end at least 48 hours in the future
+            // so that there is still at least a one day trial if your customer pays at the end of the 24 hours.
+            // We also add 10 seconds of extra time to account for any delay with an API request onto Stripe.
+            $minimumTrialPeriod = Carbon::now()->addHours(48)->addSeconds(10);
+
+            $trialEnd = $this->trialExpires->gt($minimumTrialPeriod) ? $this->trialExpires : $minimumTrialPeriod;
+        } else {
+            $trialEnd = null;
+        }
+
+        return Checkout::create($this->owner, array_merge([
+            'mode' => 'subscription',
+            'line_items' => collect($this->items)->values()->all(),
+            'allow_promotion_codes' => $this->allowPromotionCodes,
+            'discounts' => [
+                ['coupon' => $this->coupon],
+            ],
+            'subscription_data' => [
+                'default_tax_rates' => $this->getTaxRatesForPayload(),
+                'trial_end' => $trialEnd ? $trialEnd->getTimestamp() : null,
+                'metadata' => array_merge($this->metadata, ['name' => $this->name]),
+            ],
+        ], $sessionOptions), $customerOptions);
     }
 
     /**
@@ -321,6 +428,7 @@ class SubscriptionBuilder
             'metadata' => $this->metadata,
             'items' => collect($this->items)->values()->all(),
             'payment_behavior' => $this->paymentBehavior(),
+            'promotion_code' => $this->promotionCode,
             'proration_behavior' => $this->prorateBehavior(),
             'trial_end' => $this->getTrialEndForPayload(),
             'off_session' => true,
