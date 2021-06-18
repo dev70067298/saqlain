@@ -24,7 +24,7 @@ class PaymentController extends Controller
      * Display the form to gather additional payment verification for the given payment.
      *
      * @param  string  $id
-     * @return \Illuminate\Contracts\View\View
+     * @return \Illuminate\View\View
      */
     public function show($id)
     {
@@ -33,7 +33,7 @@ class PaymentController extends Controller
             'payment' => new Payment(
                 StripePaymentIntent::retrieve($id, Cashier::stripeOptions())
             ),
-            'redirect' => url(request('redirect', '/')),
+            'redirect' => request('redirect'),
         ]);
     }
 }

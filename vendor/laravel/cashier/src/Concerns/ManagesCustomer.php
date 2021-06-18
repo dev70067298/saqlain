@@ -3,13 +3,11 @@
 namespace Laravel\Cashier\Concerns;
 
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Collection;
 use Laravel\Cashier\Cashier;
 use Laravel\Cashier\Exceptions\CustomerAlreadyCreated;
 use Laravel\Cashier\Exceptions\InvalidCustomer;
 use Stripe\BillingPortal\Session as StripeBillingPortalSession;
 use Stripe\Customer as StripeCustomer;
-use Stripe\Exception\InvalidRequestException as StripeInvalidRequestException;
 
 trait ManagesCustomer
 {
@@ -24,7 +22,7 @@ trait ManagesCustomer
     }
 
     /**
-     * Determine if the customer has a Stripe customer ID.
+     * Determine if the entity has a Stripe customer ID.
      *
      * @return bool
      */
@@ -34,7 +32,7 @@ trait ManagesCustomer
     }
 
     /**
-     * Determine if the customer has a Stripe customer ID and throw an exception if not.
+     * Determine if the entity has a Stripe customer ID and throw an exception if not.
      *
      * @return void
      *
@@ -130,7 +128,7 @@ trait ManagesCustomer
     }
 
     /**
-     * Apply a coupon to the customer.
+     * Apply a coupon to the billable entity.
      *
      * @param  string  $coupon
      * @return void
@@ -147,7 +145,7 @@ trait ManagesCustomer
     }
 
     /**
-     * Get the Stripe supported currency used by the customer.
+     * Get the Stripe supported currency used by the entity.
      *
      * @return string
      */
@@ -183,72 +181,6 @@ trait ManagesCustomer
         return new RedirectResponse(
             $this->billingPortalUrl($returnUrl)
         );
-    }
-
-    /**
-     * Get a collection of the customer's TaxID's.
-     *
-     * @return \Illuminate\Support\Collection|\Stripe\TaxId[]
-     */
-    public function taxIds(array $options = [])
-    {
-        $this->assertCustomerExists();
-
-        return new Collection(
-            StripeCustomer::allTaxIds($this->stripe_id, $options, $this->stripeOptions())->data
-        );
-    }
-
-    /**
-     * Find a TaxID by ID.
-     *
-     * @return \Stripe\TaxId|null
-     */
-    public function findTaxId($id)
-    {
-        $this->assertCustomerExists();
-
-        try {
-            return StripeCustomer::retrieveTaxId(
-                $this->stripe_id, $id, [], $this->stripeOptions()
-            );
-        } catch (StripeInvalidRequestException $exception) {
-            //
-        }
-    }
-
-    /**
-     * Create a TaxID for the customer.
-     *
-     * @param  string  $type
-     * @param  string  $value
-     * @return \Stripe\TaxId
-     */
-    public function createTaxId($type, $value)
-    {
-        $this->assertCustomerExists();
-
-        return StripeCustomer::createTaxId($this->stripe_id, [
-            'type' => $type,
-            'value' => $value,
-        ], $this->stripeOptions());
-    }
-
-    /**
-     * Delete a TaxID for the customer.
-     *
-     * @param  string  $id
-     * @return void
-     */
-    public function deleteTaxId($id)
-    {
-        $this->assertCustomerExists();
-
-        try {
-            StripeCustomer::deleteTaxId($this->stripe_id, $id, [], $this->stripeOptions());
-        } catch (StripeInvalidRequestException $exception) {
-            //
-        }
     }
 
     /**

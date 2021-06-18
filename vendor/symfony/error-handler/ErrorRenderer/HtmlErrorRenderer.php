@@ -15,7 +15,6 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\ErrorHandler\Exception\FlattenException;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Debug\FileLinkFormatter;
 use Symfony\Component\HttpKernel\Log\DebugLoggerInterface;
 
 /**
@@ -40,12 +39,9 @@ class HtmlErrorRenderer implements ErrorRendererInterface
     private $outputBuffer;
     private $logger;
 
-    private static $template = 'views/error.html.php';
-
     /**
-     * @param bool|callable                 $debug          The debugging mode as a boolean or a callable that should return it
-     * @param string|FileLinkFormatter|null $fileLinkFormat
-     * @param bool|callable                 $outputBuffer   The output buffer as a string or a callable that should return it
+     * @param bool|callable $debug        The debugging mode as a boolean or a callable that should return it
+     * @param bool|callable $outputBuffer The output buffer as a string or a callable that should return it
      */
     public function __construct($debug = false, string $charset = null, $fileLinkFormat = null, string $projectDir = null, $outputBuffer = '', LoggerInterface $logger = null)
     {
@@ -138,7 +134,7 @@ class HtmlErrorRenderer implements ErrorRendererInterface
         $statusCode = $this->escape($exception->getStatusCode());
 
         if (!$debug) {
-            return $this->include(self::$template, [
+            return $this->include('views/error.html.php', [
                 'statusText' => $statusText,
                 'statusCode' => $statusCode,
             ]);
@@ -190,7 +186,7 @@ class HtmlErrorRenderer implements ErrorRendererInterface
 
     private function escape(string $string): string
     {
-        return htmlspecialchars($string, \ENT_COMPAT | \ENT_SUBSTITUTE, $this->charset);
+        return htmlspecialchars($string, ENT_COMPAT | ENT_SUBSTITUTE, $this->charset);
     }
 
     private function abbrClass(string $class): string
@@ -285,7 +281,7 @@ class HtmlErrorRenderer implements ErrorRendererInterface
             }
 
             for ($i = max($line - $srcContext, 1), $max = min($line + $srcContext, \count($content)); $i <= $max; ++$i) {
-                $lines[] = '<li'.($i == $line ? ' class="selected"' : '').'><code>'.$this->fixCodeMarkup($content[$i - 1]).'</code></li>';
+                $lines[] = '<li'.($i == $line ? ' class="selected"' : '').'><a class="anchor" name="line'.$i.'"></a><code>'.$this->fixCodeMarkup($content[$i - 1]).'</code></li>';
             }
 
             return '<ol start="'.max($line - $srcContext, 1).'">'.implode("\n", $lines).'</ol>';
@@ -304,9 +300,9 @@ class HtmlErrorRenderer implements ErrorRendererInterface
         }
 
         // missing </span> tag at the end of line
-        $opening = strrpos($line, '<span');
-        $closing = strrpos($line, '</span>');
-        if (false !== $opening && (false === $closing || $closing < $opening)) {
+        $opening = strpos($line, '<span');
+        $closing = strpos($line, '</span>');
+        if (false !== $opening && (false === $closing || $closing > $opening)) {
             $line .= '</span>';
         }
 
@@ -349,21 +345,10 @@ class HtmlErrorRenderer implements ErrorRendererInterface
 
     private function include(string $name, array $context = []): string
     {
-        extract($context, \EXTR_SKIP);
+        extract($context, EXTR_SKIP);
         ob_start();
-
-        include is_file(\dirname(__DIR__).'/Resources/'.$name) ? \dirname(__DIR__).'/Resources/'.$name : $name;
+        include __DIR__.'/../Resources/'.$name;
 
         return trim(ob_get_clean());
-    }
-
-    /**
-     * Allows overriding the default non-debug template.
-     *
-     * @param string $template path to the custom template file to render
-     */
-    public static function setTemplate(string $template): void
-    {
-        self::$template = $template;
     }
 }

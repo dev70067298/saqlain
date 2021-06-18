@@ -18,6 +18,8 @@
        <thead>
             <tr>
                 <th class="text-center">Group Name</th>
+                <th class="text-center">Share Content</th>
+
             </tr>
        </thead>
         <tbody>
@@ -25,6 +27,7 @@
             @foreach ($data as $row)
           <tr>
           <td class="text-center" scope="row"><a href="{{route('group_teacher_data',array('id'=>$row->id))}}" class="btn btn-danger">{{$row->group_name}}</a></td>
+          <td class="text-center" scope="row"><a href="{{route('sharecontent',array('id'=>$row->id))}}" class="btn btn-danger">Shae</a></td>
           </tr>
           @endforeach
          @else

@@ -14,7 +14,7 @@ use App\adminService;
 use App\market;
 use App\gt;
 use App\gp;
-
+use App\group_content;
 class ResearcherController extends Controller
 {
     protected $user;
@@ -236,5 +236,61 @@ class ResearcherController extends Controller
            return view('researcher.groupdata')->with(array('gp'=>$gp,'admin'=>$admin,'chat_users'=>$chat_users,'student'=>$users));
 
       }
+
+      public function sharecontent($id)
+      {
+          if (Auth::check()) {
+              if($this->user->userRole != 3)
+              {
+               return redirect('/login');
+              }
+           }
+           else
+           {
+               return redirect('/login');
+           }
+           $content=group_content::where('g_id',$id)->get();
+           $chat_users=User::where('userRole',2)->orderBy('id','desc')->get();
+           $admin=User::where('userRole',1)->first();
+
+           return view('researcher.sharecontent')->with(array('admin'=>$admin,'chat_users'=>$chat_users,'data'=>$content,'group_id'=>$id));
+
+      }
+
+
+      public function storecontent(Request $request)
+      {
+         if (Auth::check()) {
+             if($this->user->userRole != 3)
+             {
+              return redirect('/login');
+             }
+          }
+          else
+          {
+              return redirect('/login');
+          }
+
+          $gc = new group_content;
+$gc->title = $request->title;
+                 if(isset($request->path))
+                 {
+                    
+                     $path=$request->path->store('image/groupcontent');
+                     $gc->path=$path;
+                 }
+                 $gc->g_id=$request->g_id;
+                
+                 if($gc->save())
+                 {
+                     return redirect()->back()->with('success','Your content shared');
+                 }
+                 else
+                 {
+                     return redirect()->back()->with('error','Your content Not shared');
+                 }
+             }
+      
+
 
 }

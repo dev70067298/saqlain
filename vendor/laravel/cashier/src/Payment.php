@@ -2,14 +2,11 @@
 
 namespace Laravel\Cashier;
 
-use Illuminate\Contracts\Support\Arrayable;
-use Illuminate\Contracts\Support\Jsonable;
-use JsonSerializable;
 use Laravel\Cashier\Exceptions\PaymentActionRequired;
 use Laravel\Cashier\Exceptions\PaymentFailure;
 use Stripe\PaymentIntent as StripePaymentIntent;
 
-class Payment implements Arrayable, Jsonable, JsonSerializable
+class Payment
 {
     /**
      * The Stripe PaymentIntent instance.
@@ -60,17 +57,6 @@ class Payment implements Arrayable, Jsonable, JsonSerializable
     }
 
     /**
-     * Capture a payment that is being held for the customer.
-     *
-     * @param  array  $options
-     * @return \Stripe\PaymentIntent
-     */
-    public function capture(array $options = [])
-    {
-        return $this->paymentIntent->capture($options, Cashier::stripeOptions());
-    }
-
-    /**
      * Determine if the payment needs a valid payment method.
      *
      * @return bool
@@ -91,26 +77,6 @@ class Payment implements Arrayable, Jsonable, JsonSerializable
     }
 
     /**
-     * Determine if the payment needs to be confirmed.
-     *
-     * @return bool
-     */
-    public function requiresConfirmation()
-    {
-        return $this->paymentIntent->status === StripePaymentIntent::STATUS_REQUIRES_CONFIRMATION;
-    }
-
-    /**
-     * Determine if the payment needs to be captured.
-     *
-     * @return bool
-     */
-    public function requiresCapture()
-    {
-        return $this->paymentIntent->status === StripePaymentIntent::STATUS_REQUIRES_CAPTURE;
-    }
-
-    /**
      * Determine if the payment was cancelled.
      *
      * @return bool
@@ -128,16 +94,6 @@ class Payment implements Arrayable, Jsonable, JsonSerializable
     public function isSucceeded()
     {
         return $this->paymentIntent->status === StripePaymentIntent::STATUS_SUCCEEDED;
-    }
-
-    /**
-     * Determine if the payment is processing.
-     *
-     * @return bool
-     */
-    public function isProcessing()
-    {
-        return $this->paymentIntent->status === StripePaymentIntent::STATUS_PROCESSING;
     }
 
     /**
@@ -165,37 +121,6 @@ class Payment implements Arrayable, Jsonable, JsonSerializable
     public function asStripePaymentIntent()
     {
         return $this->paymentIntent;
-    }
-
-    /**
-     * Get the instance as an array.
-     *
-     * @return array
-     */
-    public function toArray()
-    {
-        return $this->asStripePaymentIntent()->toArray();
-    }
-
-    /**
-     * Convert the object to its JSON representation.
-     *
-     * @param  int  $options
-     * @return string
-     */
-    public function toJson($options = 0)
-    {
-        return json_encode($this->jsonSerialize(), $options);
-    }
-
-    /**
-     * Convert the object into something JSON serializable.
-     *
-     * @return array
-     */
-    public function jsonSerialize()
-    {
-        return $this->toArray();
     }
 
     /**

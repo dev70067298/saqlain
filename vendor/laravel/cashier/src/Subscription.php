@@ -49,10 +49,8 @@ class Subscription extends Model
      * @var array
      */
     protected $dates = [
-        'created_at',
-        'ends_at',
-        'trial_ends_at',
-        'updated_at',
+        'trial_ends_at', 'ends_at',
+        'created_at', 'updated_at',
     ];
 
     /**
@@ -91,7 +89,7 @@ class Subscription extends Model
      */
     public function items()
     {
-        return $this->hasMany(Cashier::$subscriptionItemModel);
+        return $this->hasMany(SubscriptionItem::class);
     }
 
     /**
@@ -405,7 +403,9 @@ class Subscription extends Model
 
         $this->guardAgainstMultiplePlans();
 
-        return $this->updateQuantity($this->quantity + $count, $plan);
+        $this->updateQuantity($this->quantity + $count, $plan);
+
+        return $this;
     }
 
     /**
@@ -424,7 +424,17 @@ class Subscription extends Model
 
         $this->alwaysInvoice();
 
-        return $this->incrementQuantity($count, $plan);
+        if ($plan) {
+            $this->findItemOrFail($plan)->setProrationBehavior($this->prorationBehavior)->incrementQuantity($count);
+
+            return $this->refresh();
+        }
+
+        $this->guardAgainstMultiplePlans();
+
+        $this->incrementQuantity($count, $plan);
+
+        return $this;
     }
 
     /**
@@ -488,64 +498,6 @@ class Subscription extends Model
     }
 
     /**
-     * Report usage for a metered product.
-     *
-     * @param  int  $quantity
-     * @param  \DateTimeInterface|int|null  $timestamp
-     * @param  string|null  $plan
-     * @return \Stripe\UsageRecord
-     */
-    public function reportUsage($quantity = 1, $timestamp = null, $plan = null)
-    {
-        if (! $plan) {
-            $this->guardAgainstMultiplePlans();
-        }
-
-        return $this->findItemOrFail($plan ?? $this->stripe_plan)->reportUsage($quantity, $timestamp);
-    }
-
-    /**
-     * Report usage for specific price of a metered product.
-     *
-     * @param  string  $plan
-     * @param  int  $quantity
-     * @param  \DateTimeInterface|int|null  $timestamp
-     * @return \Stripe\UsageRecord
-     */
-    public function reportUsageFor($plan, $quantity = 1, $timestamp = null)
-    {
-        return $this->reportUsage($quantity, $timestamp, $plan);
-    }
-
-    /**
-     * Get the usage records for a metered product.
-     *
-     * @param  array  $options
-     * @param  string|null  $plan
-     * @return \Illuminate\Support\Collection
-     */
-    public function usageRecords($options = [], $plan = null)
-    {
-        if (! $plan) {
-            $this->guardAgainstMultiplePlans();
-        }
-
-        return $this->findItemOrFail($plan ?? $this->stripe_plan)->usageRecords($options);
-    }
-
-    /**
-     * Get the usage records for a specific price of a metered product.
-     *
-     * @param  string  $plan
-     * @param  array  $options
-     * @return \Illuminate\Support\Collection
-     */
-    public function usageRecordsFor($plan, $options = [])
-    {
-        return $this->usageRecords($options, $plan);
-    }
-
-    /**
      * Change the billing cycle anchor on a plan change.
      *
      * @param  \DateTimeInterface|int|string  $date
@@ -577,29 +529,6 @@ class Subscription extends Model
     }
 
     /**
-     * Force the subscription's trial to end immediately.
-     *
-     * @return $this
-     */
-    public function endTrial()
-    {
-        if (is_null($this->trial_ends_at)) {
-            return $this;
-        }
-
-        $this->updateStripeSubscription([
-            'trial_end' => 'now',
-            'proration_behavior' => $this->prorateBehavior(),
-        ]);
-
-        $this->trial_ends_at = null;
-
-        $this->save();
-
-        return $this;
-    }
-
-    /**
      * Extend an existing subscription's trial period.
      *
      * @param  \Carbon\CarbonInterface  $date
@@ -611,10 +540,11 @@ class Subscription extends Model
             throw new InvalidArgumentException("Extending a subscription's trial requires a date in the future.");
         }
 
-        $this->updateStripeSubscription([
-            'trial_end' => $date->getTimestamp(),
-            'proration_behavior' => $this->prorateBehavior(),
-        ]);
+        $subscription = $this->asStripeSubscription();
+
+        $subscription->trial_end = $date->getTimestamp();
+
+        $subscription->save();
 
         $this->trial_ends_at = $date;
 
@@ -648,14 +578,10 @@ class Subscription extends Model
             $this->stripe_id, $this->getSwapOptions($items, $options), $this->owner->stripeOptions()
         );
 
-        /** @var \Stripe\SubscriptionItem $firstItem */
-        $firstItem = $stripeSubscription->items->first();
-        $isSinglePlan = $stripeSubscription->items->count() === 1;
-
         $this->fill([
             'stripe_status' => $stripeSubscription->status,
-            'stripe_plan' => $isSinglePlan ? $firstItem->plan->id : null,
-            'quantity' => $isSinglePlan ? $firstItem->quantity : null,
+            'stripe_plan' => $stripeSubscription->plan ? $stripeSubscription->plan->id : null,
+            'quantity' => $stripeSubscription->quantity,
             'ends_at' => null,
         ])->save();
 
@@ -716,7 +642,7 @@ class Subscription extends Model
 
             return [$plan => array_merge([
                 'plan' => $plan,
-                'quantity' => $isSinglePlanSwap ? $this->quantity : null,
+                'quantity' => $isSinglePlanSwap ? $this->quantity : 1,
                 'tax_rates' => $this->getPlanTaxRatesForPayload($plan),
             ], $options)];
         });
@@ -732,17 +658,13 @@ class Subscription extends Model
     {
         /** @var \Stripe\SubscriptionItem $stripeSubscriptionItem */
         foreach ($this->asStripeSubscription()->items->data as $stripeSubscriptionItem) {
-            $plan = $stripeSubscriptionItem->plan;
+            $plan = $stripeSubscriptionItem->plan->id;
 
-            if (! $item = $items->get($plan->id, [])) {
+            if (! $item = $items->get($plan, [])) {
                 $item['deleted'] = true;
-
-                if ($plan->usage_type == 'metered') {
-                    $item['clear_usage'] = true;
-                }
             }
 
-            $items->put($plan->id, $item + ['id' => $stripeSubscriptionItem->id]);
+            $items->put($plan, $item + ['id' => $stripeSubscriptionItem->id]);
         }
 
         return $items;
@@ -785,7 +707,7 @@ class Subscription extends Model
      * Add a new Stripe plan to the subscription.
      *
      * @param  string  $plan
-     * @param  int|null  $quantity
+     * @param  int  $quantity
      * @param  array  $options
      * @return $this
      *
@@ -859,12 +781,11 @@ class Subscription extends Model
             throw SubscriptionUpdateFailure::cannotDeleteLastPlan($this);
         }
 
-        $stripeItem = $this->findItemOrFail($plan)->asStripeSubscriptionItem();
+        $item = $this->findItemOrFail($plan);
 
-        $stripeItem->delete(array_filter([
-            'clear_usage' => $stripeItem->plan->usage_type === 'metered' ? true : null,
+        $item->asStripeSubscriptionItem()->delete([
             'proration_behavior' => $this->prorateBehavior(),
-        ]));
+        ]);
 
         $this->items()->where('stripe_plan', $plan)->delete();
 
@@ -914,36 +835,7 @@ class Subscription extends Model
     }
 
     /**
-     * Cancel the subscription at a specific moment in time.
-     *
-     * @param  \DateTimeInterface|int  $endsAt
-     * @return $this
-     */
-    public function cancelAt($endsAt)
-    {
-        if ($endsAt instanceof DateTimeInterface) {
-            $endsAt = $endsAt->getTimestamp();
-        }
-
-        $subscription = $this->asStripeSubscription();
-
-        $subscription->proration_behavior = $this->prorateBehavior();
-
-        $subscription->cancel_at = $endsAt;
-
-        $subscription = $subscription->save();
-
-        $this->stripe_status = $subscription->status;
-
-        $this->ends_at = Carbon::createFromTimestamp($subscription->cancel_at);
-
-        $this->save();
-
-        return $this;
-    }
-
-    /**
-     * Cancel the subscription immediately without invoicing.
+     * Cancel the subscription immediately.
      *
      * @return $this
      */
@@ -959,7 +851,7 @@ class Subscription extends Model
     }
 
     /**
-     * Cancel the subscription immediately and invoice.
+     * Cancel the subscription immediately.
      *
      * @return $this
      */
@@ -1060,15 +952,13 @@ class Subscription extends Model
     /**
      * Get the latest invoice for the subscription.
      *
-     * @return \Laravel\Cashier\Invoice|null
+     * @return \Laravel\Cashier\Invoice
      */
     public function latestInvoice()
     {
         $stripeSubscription = $this->asStripeSubscription(['latest_invoice']);
 
-        if ($stripeSubscription->latest_invoice) {
-            return new Invoice($this->owner, $stripeSubscription->latest_invoice);
-        }
+        return new Invoice($this->owner, $stripeSubscription->latest_invoice);
     }
 
     /**
@@ -1095,18 +985,14 @@ class Subscription extends Model
     {
         $stripeSubscription = $this->asStripeSubscription();
 
-        $stripeSubscription->default_tax_rates = $this->user->taxRates() ?: null;
-
-        $stripeSubscription->proration_behavior = $this->prorateBehavior();
+        $stripeSubscription->default_tax_rates = $this->user->taxRates();
 
         $stripeSubscription->save();
 
         foreach ($this->items as $item) {
             $stripeSubscriptionItem = $item->asStripeSubscriptionItem();
 
-            $stripeSubscriptionItem->tax_rates = $this->getPlanTaxRatesForPayload($item->stripe_plan) ?: null;
-
-            $stripeSubscriptionItem->proration_behavior = $this->prorateBehavior();
+            $stripeSubscriptionItem->tax_rates = $this->getPlanTaxRatesForPayload($item->stripe_plan);
 
             $stripeSubscriptionItem->save();
         }
@@ -1142,13 +1028,13 @@ class Subscription extends Model
      */
     public function latestPayment()
     {
-        $subscription = $this->asStripeSubscription(['latest_invoice.payment_intent']);
+        $paymentIntent = $this->asStripeSubscription(['latest_invoice.payment_intent'])
+            ->latest_invoice
+            ->payment_intent;
 
-        if ($invoice = $subscription->latest_invoice) {
-            return $invoice->payment_intent
-                ? new Payment($invoice->payment_intent)
-                : null;
-        }
+        return $paymentIntent
+            ? new Payment($paymentIntent)
+            : null;
     }
 
     /**

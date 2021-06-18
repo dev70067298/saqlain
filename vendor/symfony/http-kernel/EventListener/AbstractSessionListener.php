@@ -38,7 +38,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
  */
 abstract class AbstractSessionListener implements EventSubscriberInterface
 {
-    public const NO_AUTO_CACHE_CONTROL_HEADER = 'Symfony-Session-NoAutoCacheControl';
+    const NO_AUTO_CACHE_CONTROL_HEADER = 'Symfony-Session-NoAutoCacheControl';
 
     protected $container;
     private $sessionUsageStack = [];
@@ -52,23 +52,27 @@ abstract class AbstractSessionListener implements EventSubscriberInterface
 
     public function onKernelRequest(RequestEvent $event)
     {
-        if (!$event->isMainRequest()) {
+        if (!$event->isMasterRequest()) {
             return;
         }
 
+        $session = null;
         $request = $event->getRequest();
-        if (!$request->hasSession()) {
-            $sess = null;
-            $request->setSessionFactory(function () use (&$sess) { return $sess ?? $sess = $this->getSession(); });
+        if ($request->hasSession()) {
+            // no-op
+        } elseif (method_exists($request, 'setSessionFactory')) {
+            $request->setSessionFactory(function () { return $this->getSession(); });
+        } elseif ($session = $this->getSession()) {
+            $request->setSession($session);
         }
 
-        $session = $this->container && $this->container->has('initialized_session') ? $this->container->get('initialized_session') : null;
+        $session = $session ?? ($this->container && $this->container->has('initialized_session') ? $this->container->get('initialized_session') : null);
         $this->sessionUsageStack[] = $session instanceof Session ? $session->getUsageIndex() : 0;
     }
 
     public function onKernelResponse(ResponseEvent $event)
     {
-        if (!$event->isMainRequest()) {
+        if (!$event->isMasterRequest()) {
             return;
         }
 
@@ -137,7 +141,7 @@ abstract class AbstractSessionListener implements EventSubscriberInterface
 
     public function onFinishRequest(FinishRequestEvent $event)
     {
-        if ($event->isMainRequest()) {
+        if ($event->isMasterRequest()) {
             array_pop($this->sessionUsageStack);
         }
     }
@@ -146,10 +150,6 @@ abstract class AbstractSessionListener implements EventSubscriberInterface
     {
         if (!$this->debug) {
             return;
-        }
-
-        if ($this->container && $this->container->has('session_collector')) {
-            $this->container->get('session_collector')();
         }
 
         if (!$requestStack = $this->container && $this->container->has('request_stack') ? $this->container->get('request_stack') : null) {

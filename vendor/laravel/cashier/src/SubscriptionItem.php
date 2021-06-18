@@ -2,9 +2,7 @@
 
 namespace Laravel\Cashier;
 
-use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 use Laravel\Cashier\Concerns\InteractsWithPaymentBehavior;
 use Laravel\Cashier\Concerns\Prorates;
 use Stripe\SubscriptionItem as StripeSubscriptionItem;
@@ -40,7 +38,7 @@ class SubscriptionItem extends Model
      */
     public function subscription()
     {
-        return $this->belongsTo(Cashier::$subscriptionModel);
+        return $this->belongsTo(Subscription::class);
     }
 
     /**
@@ -186,37 +184,6 @@ class SubscriptionItem extends Model
     }
 
     /**
-     * Report usage for a metered product.
-     *
-     * @param  int  $quantity
-     * @param  \DateTimeInterface|int|null  $timestamp
-     * @return \Stripe\UsageRecord
-     */
-    public function reportUsage($quantity = 1, $timestamp = null)
-    {
-        $timestamp = $timestamp instanceof DateTimeInterface ? $timestamp->getTimestamp() : $timestamp;
-
-        return StripeSubscriptionItem::createUsageRecord($this->stripe_id, [
-            'quantity' => $quantity,
-            'action' => $timestamp ? 'set' : 'increment',
-            'timestamp' => $timestamp ?? time(),
-        ], $this->subscription->owner->stripeOptions());
-    }
-
-    /**
-     * Get the usage records for a metered product.
-     *
-     * @param  array  $options
-     * @return \Illuminate\Support\Collection
-     */
-    public function usageRecords($options = [])
-    {
-        return new Collection(StripeSubscriptionItem::allUsageRecordSummaries(
-            $this->stripe_id, $options, $this->subscription->owner->stripeOptions()
-        )->data);
-    }
-
-    /**
      * Update the underlying Stripe subscription item information for the model.
      *
      * @param  array  $options
@@ -233,7 +200,7 @@ class SubscriptionItem extends Model
      * Get the subscription as a Stripe subscription item object.
      *
      * @param  array  $expand
-     * @return \Stripe\SubscriptionItem
+     * @return StripeSubscriptionItem
      */
     public function asStripeSubscriptionItem(array $expand = [])
     {
